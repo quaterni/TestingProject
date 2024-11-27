@@ -3,11 +3,18 @@ namespace TestingProject.Models;
 
 public class Client
 {
-    public required long ClientId { get; set; }
+    public Client(string username, long clientId, Guid systemId)
+    {
+        ClientId = clientId;
+        SystemId = systemId;
+        Username = username;
+    }
 
-    public required string Username { get; set; }
+    public long ClientId { get; }
 
-    public required Guid SystemId { get; set; }
+    public string Username { get; set; }
+
+    public Guid SystemId { get; set; }
 
     public override bool Equals(object? obj)
     {
