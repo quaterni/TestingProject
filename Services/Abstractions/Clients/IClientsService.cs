@@ -11,5 +11,5 @@ public interface IClientsService
 
     Task<Result> DeleteClientAsync(long clientId, CancellationToken cancellationToken = default);
 
-    Task<Result> AddClientsIfNotExists(Client[] clients, CancellationToken cancellationToken = default);
+    Task<Result<IEnumerable<Client>>> AddClientsIfNotExists(Client[] clients, CancellationToken cancellationToken = default);
 }

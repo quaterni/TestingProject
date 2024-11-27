@@ -66,10 +66,12 @@ public class ClientsController : ControllerBase
                 request.SystemId))
             .ToArray();
 
-       await _clientsService.AddClientsIfNotExists(
+       var result = await _clientsService.AddClientsIfNotExists(
             clients,
             cancellationToken);
 
-        return NoContent();
+        var response = result.Value.Select(c=> new ClientResponse(c.ClientId, c.Username, c.SystemId));
+
+        return Ok(response);
     }
 }

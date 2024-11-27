@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using TestingProject.Data;
 using TestingProject.Models;
 using TestingProject.Services.Abstractions.Clients;
@@ -15,19 +16,45 @@ public class ClientService : IClientsService
         _dbContext = dbContext;
     }
 
-    public async Task<Result> AddClientsIfNotExists(Client[] clients, CancellationToken cancellationToken = default)
+    public async Task<Result<IEnumerable<Client>>> AddClientsIfNotExists(Client[] clients, CancellationToken cancellationToken = default)
     {
+        List<Client> existingClients = new();
         var ids = clients.Select(c => c.ClientId).ToArray();
 
-        var existingClients = await _dbContext.Set<Client>()
+        foreach (var client in clients)
+        {
+            if(await _dbContext.Set<Client>()
+                .Where(c=> c.ClientId == client.ClientId)
+                .AnyAsync(cancellationToken))
+            {
+                existingClients.Add(client);
+                continue;
+            }
+            _dbContext.Add(client);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return Result.Success<IEnumerable<Client>>(existingClients);
+    }
+
+    // Изначально написал такую реализацию как более оптимальную с точки зрения количества обращений в бд,
+    // но по тз: "добавление и сравнение каждого объекта в этом методе должно выполняться асинхронно" -
+    // видимо имеется в виду что запрос в бд должен при проверке каждого элемента
+    private async Task<Result<IEnumerable<Client>>> AddClientsIfNotExists_Obsolete(Client[] clients, CancellationToken cancellationToken = default)
+    {
+        List<Client> existingClients = new();
+        var ids = clients.Select(c => c.ClientId).ToArray();
+
+        var clientsFromDb = await _dbContext.Set<Client>()
             .Where(c => ids.Contains(c.ClientId))
             .AsNoTracking()
             .ToArrayAsync(cancellationToken);
 
         foreach (var client in clients)
         {
-            if (existingClients.Contains(client))
+            if (clientsFromDb.Contains(client))
             {
+                existingClients.Add(client);
                 continue;
             }
             _dbContext.Add(client);
@@ -35,7 +62,7 @@ public class ClientService : IClientsService
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return Result.Success();
+        return Result.Success<IEnumerable<Client>>(existingClients);
     }
 
     public async Task<Result> DeleteClientAsync(long clientId, CancellationToken cancellationToken = default)
