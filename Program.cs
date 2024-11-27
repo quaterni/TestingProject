@@ -1,10 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using TestingProject.Data;
+using TestingProject.Services.Abstractions.Clients;
+using TestingProject.Services.Clients;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<ApplicationDbContext>(
     options => options.UseNpgsql(builder.Configuration.GetConnectionString("ClientsDatabase")));
+
+builder.Services.AddScoped<IClientsService, ClientService>();
 
 builder.Services.AddControllers();
 
